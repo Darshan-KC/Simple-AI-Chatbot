@@ -6,6 +6,6 @@ new class extends Component
 {
     public function render()
     {
-        return view('pages.chat');
+        return view('pages.⚡chat.chat');
     }
 };
