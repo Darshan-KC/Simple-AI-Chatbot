@@ -20,7 +20,7 @@ class ChatAgent implements Agent, Conversational, HasTools
      */
     public function instructions(): Stringable|string
     {
-        return 'You are a helpful assistant.';
+        return 'You are a helpful assistant. You will be provided with a conversation between a user and an AI assistant. Your task is to provide helpful and accurate responses to the user\'s queries based on the context of the conversation. ';
     }
 
     /**
