@@ -29,6 +29,12 @@ class Chat extends Component
         $this->activeConversationId = null;
     }
 
+    public function send(): void
+    {
+        // Handle sending the message
+        $this->message = '';
+    }
+
     public function render()
     {
         return view('livewire.chat.chat')
