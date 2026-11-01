@@ -2,35 +2,28 @@
 
 namespace App\Ai\Agents;
 
+use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasTools;
+use Laravel\Ai\Contracts\RemembersConversations as RemembersConversationsContract;
 use Laravel\Ai\Contracts\Tool;
-use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Providers\Tools\ProviderTool;
 use Stringable;
 
-class ChatAgent implements Agent, Conversational, HasTools
+class ChatAgent implements Agent, Conversational, HasTools, RemembersConversationsContract
 {
-    use Promptable;
+    use Promptable, RemembersConversations;
 
     /**
      * Get the instructions that the agent should follow.
      */
     public function instructions(): Stringable|string
     {
-        return 'You are a helpful assistant. You will be provided with a conversation between a user and an AI assistant. Your task is to provide helpful and accurate responses to the user\'s queries based on the context of the conversation. ';
-    }
-
-    /**
-     * Get the list of messages comprising the conversation so far.
-     *
-     * @return Message[]
-     */
-    public function messages(): iterable
-    {
-        return [];
+        return 'You are a friendly and helpful AI assistant. Answer the user clearly and concisely. '
+            .'Use Markdown when it improves readability, such as code blocks, lists, and bold text. '
+            .'If you are unsure about something, say so instead of guessing.';
     }
 
     /**
