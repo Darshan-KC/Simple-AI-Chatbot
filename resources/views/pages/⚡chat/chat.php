@@ -16,6 +16,8 @@ new #[Title('Chat')] class extends Component
 
     public string $message = '';
 
+    public bool $composingNewChat = false;
+
     public ?string $errorMessage = null;
 
     public function mount(): void
@@ -87,7 +89,18 @@ new #[Title('Chat')] class extends Component
     #[Computed]
     public function activeConversation(): ?array
     {
-        return $this->conversations()->firstWhere('id', $this->activeConversationId);
+        if ($this->activeConversationId === null || ! $this->ownsConversation($this->activeConversationId)) {
+            return null;
+        }
+
+        $conversation = Conversation::query()->whereKey($this->activeConversationId)->first();
+
+        return $conversation === null ? null : [
+            'id' => $conversation->id,
+            'title' => $conversation->title,
+            'updated_at' => $conversation->updated_at,
+            'preview' => '',
+        ];
     }
 
     public function selectConversation(string $conversationId): void
@@ -97,6 +110,7 @@ new #[Title('Chat')] class extends Component
         }
 
         $this->activeConversationId = $conversationId;
+        $this->composingNewChat = false;
         $this->message = '';
         $this->errorMessage = null;
     }
@@ -104,6 +118,7 @@ new #[Title('Chat')] class extends Component
     public function newConversation(): void
     {
         $this->activeConversationId = null;
+        $this->composingNewChat = true;
         $this->message = '';
         $this->errorMessage = null;
     }
@@ -111,6 +126,7 @@ new #[Title('Chat')] class extends Component
     public function closeConversation(): void
     {
         $this->activeConversationId = null;
+        $this->composingNewChat = false;
     }
 
     public function deleteConversation(string $conversationId): void
@@ -123,7 +139,7 @@ new #[Title('Chat')] class extends Component
         Conversation::query()->whereKey($conversationId)->delete();
 
         if ($this->activeConversationId === $conversationId) {
-            $this->newConversation();
+            $this->closeConversation();
         }
     }
 

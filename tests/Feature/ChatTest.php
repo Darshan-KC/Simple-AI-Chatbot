@@ -81,6 +81,16 @@ test('a user cannot open another users conversation', function () {
         ->assertNotFound();
 });
 
+test('starting a new chat opens the composer', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    Livewire::test('pages::chat')
+        ->call('newConversation')
+        ->assertSet('activeConversationId', null)
+        ->assertSet('composingNewChat', true);
+});
+
 test('deleting a conversation removes it and its messages', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
@@ -94,7 +104,9 @@ test('deleting a conversation removes it and its messages', function () {
     $conversation = Conversation::query()->sole();
     $conversationId = $conversation->id;
 
-    $component->call('deleteConversation', $conversationId);
+    $component->call('deleteConversation', $conversationId)
+        ->assertSet('activeConversationId', null)
+        ->assertSet('composingNewChat', false);
 
     $this->assertModelMissing($conversation);
     expect(ConversationMessage::query()->where('conversation_id', $conversationId)->count())->toBe(0);

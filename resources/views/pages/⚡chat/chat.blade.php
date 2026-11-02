@@ -7,8 +7,8 @@
             {{-- Conversation list --}}
             <aside @class([
                 'w-full shrink-0 flex-col border-e border-zinc-200 bg-zinc-50/70 dark:border-zinc-800 dark:bg-zinc-950/30 md:flex md:w-72 lg:w-80',
-                'flex' => $activeConversationId === null,
-                'hidden' => $activeConversationId !== null,
+                'flex' => $activeConversationId === null && ! $composingNewChat,
+                'hidden' => $activeConversationId !== null || $composingNewChat,
             ])>
                 <div class="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800">
                     <div>
@@ -137,8 +137,8 @@
             {{-- Chat window --}}
             <main @class([
                 'min-w-0 flex-1 flex-col bg-white dark:bg-zinc-900 md:flex',
-                'flex' => $activeConversationId !== null,
-                'hidden' => $activeConversationId === null,
+                'flex' => $activeConversationId !== null || $composingNewChat,
+                'hidden' => $activeConversationId === null && ! $composingNewChat,
             ])>
                 {{-- Header --}}
                 <header
@@ -164,7 +164,7 @@
 
                         <div class="min-w-0">
                             <h2 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                {{ $this->activeConversation['title'] ?? __('New conversation') }}
+                                {{ filled($this->activeConversation['title'] ?? null) ? $this->activeConversation['title'] : __('New conversation') }}
                             </h2>
                             <p class="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                                 <span class="size-1.5 rounded-full bg-emerald-500"></span>
