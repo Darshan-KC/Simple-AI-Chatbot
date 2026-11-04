@@ -5,13 +5,11 @@
 <div>
     <!-- Smile, breathe, and go slowly. - Thich Nhat Hanh -->
     <button type="button"
-        {{ $attributes->merge([
-            'class' => 'group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition',
-        ]) }}
-        @class([
+        {{ $attributes->class([
+            'group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition',
             'bg-indigo-50' => $active,
-            'hover:bg-gray-50' => !$active,
-        ])>
+            'hover:bg-gray-50' => ! $active,
+        ]) }}>
         {{-- Avatar --}}
         <x-chat.avatar :initials="$initials" size="md" :online="$online" />
 

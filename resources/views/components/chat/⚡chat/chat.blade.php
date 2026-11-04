@@ -1,39 +1,28 @@
-{{-- <div> --}}
-{{-- He who is contented is rich. - Laozi --}}
-{{-- </div> --}}
-
 <div class="h-[calc(100vh-4rem)] min-h-0 p-4 sm:p-6">
     <div class="mx-auto flex h-full max-w-7xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
-        {{-- ========================================================= --}}
-        {{-- SIDEBAR                                                   --}}
-        {{-- ========================================================= --}}
-
-        <aside class="flex w-full shrink-0 flex-col border-r border-gray-200 bg-white md:w-80 lg:w-96"
-            :class="$wire.activeConversationId ? 'hidden md:flex' : 'flex'">
-            {{-- Sidebar Header --}}
+        {{-- Sidebar --}}
+        <aside @class([
+            'w-full shrink-0 flex-col border-r border-gray-200 bg-white md:flex md:w-80 lg:w-96',
+            'flex' => $activeConversationId === null && ! $composingNewChat,
+            'hidden' => $activeConversationId !== null || $composingNewChat,
+        ])>
             <div class="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5">
                 <div>
-                    <h1 class="text-lg font-semibold text-gray-900">
-                        Chats
-                    </h1>
-
-                    <p class="text-xs text-gray-500">
-                        Your conversations
-                    </p>
+                    <h1 class="text-lg font-semibold text-gray-900">{{ __('Chats') }}</h1>
+                    <p class="text-xs text-gray-500">{{ __('Your conversations') }}</p>
                 </div>
 
-                <button type="button"
-                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-                    title="New conversation">
+                <button type="button" wire:click="newConversation" title="{{ __('New conversation') }}"
+                    class="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
                     </svg>
+                    <span class="sr-only">{{ __('New conversation') }}</span>
                 </button>
             </div>
 
-            {{-- Search --}}
             <div class="shrink-0 border-b border-gray-100 p-3">
                 <div class="relative">
                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -43,267 +32,266 @@
                         <path stroke-linecap="round" d="m20 20-3.5-3.5" />
                     </svg>
 
-                    <input type="search" wire:model.live="search" placeholder="Search conversations..."
+                    <input type="search" wire:model.live.debounce.300ms="search"
+                        placeholder="{{ __('Search conversations...') }}"
                         class="w-full rounded-xl border-0 bg-gray-100 py-2.5 pl-9 pr-4 text-sm text-gray-900 outline-none ring-0 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-indigo-500" />
                 </div>
             </div>
 
-            {{-- Conversation List --}}
             <div class="min-h-0 flex-1 overflow-y-auto">
-
                 <div class="p-2">
+                    @forelse ($this->conversations as $conversation)
+                        <div wire:key="conversation-{{ $conversation['id'] }}" class="group relative">
+                            <x-chat.conversation-item
+                                :name="$conversation['title']"
+                                :message="$conversation['preview'] ?: __('No messages yet')"
+                                :time="$conversation['updated_at']->isToday() ? $conversation['updated_at']->format('g:i A') : $conversation['updated_at']->format('M j')"
+                                :initials="\Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($conversation['title'], 0, 2))"
+                                :active="$conversation['id'] === $activeConversationId"
+                                wire:click="selectConversation('{{ $conversation['id'] }}')" />
 
-                    <x-chat.conversation-item name="John Doe" message="Hey, how are you doing?" time="10:32 AM"
-                        initials="JD" :unread="2" :online="true" :active="$activeConversationId === 1"
-                        wire:click="selectConversation(1)" />
-
-                    <x-chat.conversation-item name="Jane Smith" message="See you tomorrow!" time="9:41 AM"
-                        initials="JS" :unread="0" :online="true" :active="$activeConversationId === 2"
-                        wire:click="selectConversation(2)" />
-
-                    <x-chat.conversation-item name="Alex Johnson" message="Thanks for your help." time="Yesterday"
-                        initials="AJ" :unread="1" :online="false" :active="$activeConversationId === 3"
-                        wire:click="selectConversation(3)" />
-
-                    <x-chat.conversation-item name="Sarah Wilson" message="I'll check it and let you know."
-                        time="Monday" initials="SW" :unread="0" :online="false" :active="$activeConversationId === 4"
-                        wire:click="selectConversation(4)" />
-
-                    <x-chat.conversation-item name="Michael Brown" message="Sounds good!" time="Sunday" initials="MB"
-                        :unread="0" :online="true" :active="$activeConversationId === 5" wire:click="selectConversation(5)" />
-
-                    <x-chat.conversation-item name="Development Team" message="Darshan: The deployment is ready."
-                        time="Saturday" initials="DT" :unread="5" :online="false" :active="$activeConversationId === 6"
-                        wire:click="selectConversation(6)" />
-
+                            <button type="button" wire:click="deleteConversation('{{ $conversation['id'] }}')"
+                                wire:confirm="{{ __('Delete this conversation? This cannot be undone.') }}"
+                                title="{{ __('Delete conversation') }}"
+                                class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                </svg>
+                                <span class="sr-only">{{ __('Delete conversation') }}</span>
+                            </button>
+                        </div>
+                    @empty
+                        <div class="px-3 py-8 text-center">
+                            <p class="text-sm font-medium text-gray-600">
+                                {{ $search !== '' ? __('No matching conversations') : __('No conversations yet') }}
+                            </p>
+                            <p class="mt-1 text-xs text-gray-500">
+                                {{ $search !== '' ? __('Try a different search term.') : __('Start a new chat to get going.') }}
+                            </p>
+                        </div>
+                    @endforelse
                 </div>
-
             </div>
 
-            {{-- Current User --}}
             <div class="shrink-0 border-t border-gray-200 p-3">
                 <div class="flex items-center gap-3 rounded-xl px-2 py-2">
-                    <x-chat.avatar initials="DC" size="md" :online="true" />
+                    <x-chat.avatar :initials="auth()->user()->initials()" size="md" :online="true" />
 
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-semibold text-gray-900">
-                            Darshan
+                            {{ auth()->user()->name }}
                         </p>
-
                         <p class="truncate text-xs text-gray-500">
-                            Online
+                            {{ __('Signed in') }}
                         </p>
                     </div>
-
-                    <button type="button"
-                        class="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
-                        title="Settings">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                        </svg>
-                    </button>
                 </div>
             </div>
         </aside>
 
-
-        {{-- ========================================================= --}}
-        {{-- CHAT WINDOW                                                --}}
-        {{-- ========================================================= --}}
-
-        <main class="min-w-0 flex-1 flex-col bg-gray-50 md:flex"
-            :class="$wire.activeConversationId ? 'flex' : 'hidden md:flex'">
-
-            {{-- Chat Header --}}
-            <header
-                class="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-5">
-
+        {{-- Chat window --}}
+        <main @class([
+            'min-w-0 flex-1 flex-col bg-gray-50 md:flex',
+            'flex' => $activeConversationId !== null || $composingNewChat,
+            'hidden' => $activeConversationId === null && ! $composingNewChat,
+        ])>
+            <header class="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-5">
                 <div class="flex min-w-0 items-center gap-3">
-
-                    {{-- Mobile Back --}}
-                    <button type="button" wire:click="$set('activeConversationId', null)"
+                    <button type="button" wire:click="closeConversation"
                         class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 md:hidden">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
+                        <span class="sr-only">{{ __('Back to conversations') }}</span>
                     </button>
 
-                    <div class="relative shrink-0">
-                        <x-chat.avatar initials="JD" size="md" :online="true" />
-                    </div>
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                        </svg>
+                    </span>
 
                     <div class="min-w-0">
                         <h2 class="truncate text-sm font-semibold text-gray-900">
-                            John Doe
+                            {{ filled($this->activeConversation['title'] ?? null) ? $this->activeConversation['title'] : __('New conversation') }}
                         </h2>
-
-                        <p class="text-xs text-green-600">
-                            Online
+                        <p class="flex items-center gap-1.5 text-xs text-gray-500">
+                            <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                            {{ __('AI assistant') }}
                         </p>
                     </div>
-
                 </div>
 
-                {{-- Header Actions --}}
-                <div class="flex shrink-0 items-center gap-1">
-
-                    {{-- Search --}}
-                    <button type="button"
-                        class="hidden rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 sm:block"
-                        title="Search messages">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="7" />
-                            <path stroke-linecap="round" d="m20 20-3.5-3.5" />
-                        </svg>
-                    </button>
-
-                    {{-- Call --}}
-                    <button type="button"
-                        class="hidden rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 sm:block"
-                        title="Call">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.136-7.136 1.125 1.125 0 0 1 .38-1.21l1.293-.97c.363-.272.534-.732.417-1.173L6.38 3.109A1.125 1.125 0 0 0 5.29 2.25H3.75A2.25 2.25 0 0 0 1.5 4.5v2.25Z" />
-                        </svg>
-                    </button>
-
-                    {{-- More --}}
-                    <button type="button"
-                        class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-                        title="More">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-                        </svg>
-                    </button>
-
-                </div>
+                <button type="button" wire:click="newConversation" title="{{ __('New conversation') }}"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                    </svg>
+                    <span class="sr-only">{{ __('New conversation') }}</span>
+                </button>
             </header>
 
-
-            {{-- ===================================================== --}}
-            {{-- MESSAGE AREA                                           --}}
-            {{-- ===================================================== --}}
-
-            <div class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-
+            <div id="chat-messages" x-data
+                x-init="$nextTick(() => { $el.scrollTop = $el.scrollHeight })"
+                x-on:chat-updated.window="$nextTick(() => { $el.scrollTop = $el.scrollHeight })"
+                class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
                 <div class="mx-auto max-w-3xl">
+                    @if ($this->activeMessages->isEmpty())
+                        <div class="flex flex-col items-center justify-center py-12 text-center">
+                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                                </svg>
+                            </span>
 
-                    {{-- Date --}}
-                    <x-chat.date-separator label="Today" />
+                            <h3 class="mt-4 text-lg font-semibold text-gray-900">
+                                {{ __('How can I help you today?') }}
+                            </h3>
+                            <p class="mt-1 max-w-md text-sm text-gray-500">
+                                {{ __('Ask a question, brainstorm an idea, or paste something you would like help with.') }}
+                            </p>
 
-                    {{-- Incoming --}}
-                    <div class="mb-4 flex items-end gap-2">
-                        <x-chat.avatar initials="JD" size="sm" />
+                            <div class="mt-6 grid w-full max-w-lg gap-2 sm:grid-cols-2">
+                                @foreach ([
+                                    'Explain a complex topic in simple terms',
+                                    'Help me debug a piece of code',
+                                    'Write a short professional email',
+                                    'Brainstorm ideas for a side project',
+                                ] as $suggestion)
+                                    <button type="button" wire:click='fillPrompt(@js($suggestion))'
+                                        class="rounded-xl border border-gray-200 px-4 py-3 text-left text-sm text-gray-600 transition hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-gray-900">
+                                        {{ $suggestion }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        <x-chat.date-separator :label="$this->activeMessages->first()['created_at']?->isToday() ? __('Today') : $this->activeMessages->first()['created_at']?->format('F j, Y')" />
 
-                        <x-chat.message message="Hey! How are you doing?" time="10:28 AM" />
-                    </div>
+                        <div class="space-y-4">
+                            @foreach ($this->activeMessages as $chatMessage)
+                                <div wire:key="message-{{ $chatMessage['id'] }}"
+                                    @class([
+                                        'flex items-end gap-2',
+                                        'justify-end' => $chatMessage['role'] === 'user',
+                                    ])>
+                                    @if ($chatMessage['role'] === 'assistant')
+                                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                                                fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                                            </svg>
+                                        </span>
+                                    @endif
 
-                    {{-- Incoming --}}
-                    <div class="mb-4 flex items-end gap-2">
-                        <x-chat.avatar initials="JD" size="sm" />
+                                    <div @class([
+                                        'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-6 shadow-sm sm:max-w-[75%]',
+                                        'bg-indigo-600 text-white' => $chatMessage['role'] === 'user',
+                                        'bg-gray-100 text-gray-900 ring-1 ring-gray-200' => $chatMessage['role'] === 'assistant',
+                                    ])>
+                                        @if ($chatMessage['role'] === 'assistant')
+                                            <div class="space-y-2 break-words [&_a]:text-indigo-600 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:italic [&_code]:rounded [&_code]:bg-black/5 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-[13px] [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-gray-900 [&_pre]:p-3 [&_pre]:text-gray-100 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5">
+                                                {!! \Illuminate\Support\Str::markdown($chatMessage['content'], [
+                                                    'html_input' => 'strip',
+                                                    'allow_unsafe_links' => false,
+                                                ]) !!}
+                                            </div>
+                                        @else
+                                            <p class="whitespace-pre-wrap break-words">{{ $chatMessage['content'] }}</p>
+                                        @endif
 
-                        <x-chat.message message="I wanted to talk to you about the new project." time="10:29 AM" />
-                    </div>
+                                        <div @class([
+                                            'mt-1 text-[10px]',
+                                            'text-indigo-200' => $chatMessage['role'] === 'user',
+                                            'text-gray-400' => $chatMessage['role'] === 'assistant',
+                                        ])>
+                                            {{ $chatMessage['created_at']?->format('g:i A') }}
+                                        </div>
+                                    </div>
 
-                    {{-- Outgoing --}}
-                    <x-chat.message message="Hey John! I'm doing great. Sure, what's up?" time="10:30 AM"
-                        :outgoing="true" />
+                                    @if ($chatMessage['role'] === 'user')
+                                        <x-chat.avatar :initials="auth()->user()->initials()" size="sm" />
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
-                    {{-- Incoming --}}
-                    <div class="mb-4 flex items-end gap-2">
-                        <x-chat.avatar initials="JD" size="sm" />
-
-                        <x-chat.message message="We're planning to start the backend implementation next week."
-                            time="10:31 AM" />
-                    </div>
-
-                    {{-- Outgoing --}}
-                    <x-chat.message message="Sounds good! I've already started looking into the architecture."
-                        time="10:31 AM" :outgoing="true" />
-
-                    {{-- Outgoing --}}
-                    <x-chat.message message="I'll share my notes with you later today. 😊" time="10:32 AM"
-                        :outgoing="true" :read="true" />
-
-                    {{-- Typing --}}
-                    <div class="mt-2 flex items-end gap-2">
-                        <x-chat.avatar initials="JD" size="sm" />
-
-                        <x-chat.typing-indicator />
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- ===================================================== --}}
-            {{-- MESSAGE COMPOSER                                       --}}
-            {{-- ===================================================== --}}
-
-            <footer class="shrink-0 border-t border-gray-200 bg-white p-3 sm:p-4">
-
-                <div class="mx-auto max-w-3xl">
-
-                    <div class="flex items-end gap-2">
-
-                        {{-- Attachment --}}
-                        <button type="button"
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
-                            title="Attach file">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24"
+                    <div wire:loading.flex wire:target="send" style="display: none;" class="mt-4 items-end gap-2">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l9.193-9.193a3 3 0 0 1 4.243 4.243l-9.193 9.193a1.5 1.5 0 0 1-2.121-2.121l8.486-8.486" />
+                                    d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                             </svg>
-                        </button>
+                        </span>
 
-                        {{-- Input --}}
-                        <div class="flex min-h-10 flex-1 items-end rounded-2xl bg-gray-100 px-4 py-2">
+                        <div class="rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-sm ring-1 ring-gray-200">
+                            <span class="flex items-center gap-1">
+                                <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]"></span>
+                                <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]"></span>
+                                <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                            <textarea wire:model="message" rows="1" placeholder="Type a message..."
-                                class="max-h-32 min-h-6 flex-1 resize-none border-0 bg-transparent p-0 text-sm leading-6 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0"></textarea>
+            <footer class="shrink-0 border-t border-gray-200 bg-white p-3 sm:p-4">
+                <div class="mx-auto max-w-3xl">
+                    @if ($errorMessage)
+                        <div class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {{ $errorMessage }}
+                        </div>
+                    @endif
 
-                            {{-- Emoji --}}
-                            <button type="button"
-                                class="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-200"
-                                title="Emoji">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="9" />
-                                    <path stroke-linecap="round" d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                    <path stroke-linecap="round" d="M9 9h.01M15 9h.01" />
-                                </svg>
-                            </button>
+                    @error('message')
+                        <p class="mb-3 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
 
+                    <form wire:submit="send" class="flex items-end gap-2">
+                        <div class="flex min-h-10 flex-1 items-end rounded-2xl bg-gray-100 px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500">
+                            <textarea wire:model="message" rows="1" x-data
+                                x-init="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 160) + 'px'"
+                                x-on:input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 160) + 'px'"
+                                x-on:keydown.enter="if (! $event.shiftKey) { $event.preventDefault(); $wire.send(); }"
+                                placeholder="{{ __('Type a message...') }}"
+                                class="max-h-40 min-h-6 flex-1 resize-none border-0 bg-transparent p-0 text-sm leading-6 text-gray-900 outline-none placeholder:text-gray-400 focus:ring-0"></textarea>
                         </div>
 
-                        {{-- Send --}}
-                        <button type="button"
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white transition hover:bg-indigo-700"
-                            title="Send message">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2">
+                        <button type="submit" wire:loading.attr="disabled" wire:target="send"
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="{{ __('Send message') }}">
+                            <svg wire:loading.remove wire:target="send" xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M6 12 3.27 3.125A59.769 59.769 0 0 1 21.485 12 59.769 59.769 0 0 1 3.27 20.875L6 12Zm0 0h7.5" />
                             </svg>
+                            <svg wire:loading wire:target="send" xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                            </svg>
+                            <span class="sr-only">{{ __('Send message') }}</span>
                         </button>
+                    </form>
 
-                    </div>
-
+                    <p class="mt-2 text-center text-[11px] text-gray-400">
+                        {{ __('Enter to send · Shift + Enter for a new line') }}
+                    </p>
                 </div>
-
             </footer>
-
         </main>
     </div>
 </div>

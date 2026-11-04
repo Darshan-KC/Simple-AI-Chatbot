@@ -27,7 +27,7 @@ test('sending a message creates a conversation and stores both messages', functi
 
     ChatAgent::fake(['Hello! How can I help you today?']);
 
-    Livewire::test('pages::chat')
+    Livewire::test('chat.chat')
         ->set('message', 'What is Laravel?')
         ->call('send')
         ->assertHasNoErrors()
@@ -54,7 +54,7 @@ test('an empty message is rejected without prompting the assistant', function ()
 
     ChatAgent::fake();
 
-    Livewire::test('pages::chat')
+    Livewire::test('chat.chat')
         ->set('message', '   ')
         ->call('send')
         ->assertHasErrors(['message' => 'required']);
@@ -76,7 +76,7 @@ test('a user cannot open another users conversation', function () {
 
     $this->actingAs($user);
 
-    Livewire::test('pages::chat')
+    Livewire::test('chat.chat')
         ->call('selectConversation', $conversationId)
         ->assertNotFound();
 });
@@ -85,7 +85,7 @@ test('starting a new chat opens the composer', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    Livewire::test('pages::chat')
+    Livewire::test('chat.chat')
         ->call('newConversation')
         ->assertSet('activeConversationId', null)
         ->assertSet('composingNewChat', true);
@@ -97,7 +97,7 @@ test('deleting a conversation removes it and its messages', function () {
 
     ChatAgent::fake(['A reply.']);
 
-    $component = Livewire::test('pages::chat')
+    $component = Livewire::test('chat.chat')
         ->set('message', 'Hello')
         ->call('send');
 
