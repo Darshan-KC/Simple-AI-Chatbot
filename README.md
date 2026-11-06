@@ -169,3 +169,7 @@ Modify this file to change the assistant's personality, add tools, or tailor res
 ## License
 
 This project is based on the Laravel Livewire starter kit and is released under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+## Contributing
+Contributions are welcome! Please fork the repository and submit a pull request with your changes. Make sure to follow the existing code style and include tests for any new features or bug fixes.
