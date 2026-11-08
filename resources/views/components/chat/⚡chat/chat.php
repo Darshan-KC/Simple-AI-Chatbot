@@ -1,6 +1,7 @@
 <?php
 
 use App\Ai\Agents\ChatAgent;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Models\ConversationMessage;
@@ -26,7 +27,7 @@ return new #[Title('Chat')] class extends Component
     }
 
     /**
-     * @return Collection<int, array{id: string, title: string, updated_at: \Illuminate\Support\Carbon, preview: string}>
+     * @return Collection<int, array{id: string, title: string, updated_at: Carbon, preview: string}>
      */
     #[Computed]
     public function conversations(): Collection
@@ -63,7 +64,7 @@ return new #[Title('Chat')] class extends Component
     }
 
     /**
-     * @return Collection<int, array{id: string, role: string, content: string, created_at: \Illuminate\Support\Carbon|null}>
+     * @return Collection<int, array{id: string, role: string, content: string, created_at: Carbon|null}>
      */
     #[Computed]
     public function activeMessages(): Collection
@@ -88,7 +89,7 @@ return new #[Title('Chat')] class extends Component
     }
 
     /**
-     * @return array{id: string, title: string, updated_at: \Illuminate\Support\Carbon, preview: string}|null
+     * @return array{id: string, title: string, updated_at: Carbon, preview: string}|null
      */
     #[Computed]
     public function activeConversation(): ?array
@@ -173,7 +174,7 @@ return new #[Title('Chat')] class extends Component
             $this->composingNewChat = false;
             $this->message = '';
             $this->dispatch('chat-updated');
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             $this->errorMessage = __('The assistant could not respond right now. Please check the AI configuration and try again.');
